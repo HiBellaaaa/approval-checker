@@ -8,35 +8,35 @@ def extract_approval_ids_from_log(file):
     content = file.read().decode('utf-8')
     return re.findall(r'Approval ID[:：]\s*([A-Z0-9]+)', content)
 
-# 擷取對帳檔中的授權碼 (支援標題合併情況)
+# 擷取對帳檔中的授權碼 (支援標題合併與部分匹配)
 @st.cache_data
 def extract_auth_codes_from_paydetail(file):
     try:
-        # 嘗試以第一列為 header
-        df = pd.read_excel(file)
+        # 先讀取表頭
+        df = pd.read_excel(file, header=0)
     except Exception:
         st.error("無法讀取 Excel 檔，請確認檔案格式為 .xls 或 .xlsx。")
         return []
-    # 支援多種欄位名稱
-    col_candidates = ["授權碼", "授权码", "Auth Code", "AuthCode"]
-    # 先檢查標準 header
+    # 嘗試標準欄位名
     for col in df.columns:
-        if str(col).strip() in col_candidates:
+        name = str(col).strip()
+        if any(keyword in name for keyword in ["授權", "授权", "Auth"]):
             return df[col].dropna().astype(str).str.strip().tolist()
-    # 如果 header 不在第一列，嘗試掃描整張表格以找出合併標題
+    # 若標準 header 找不到，讀取原始表格掃描前 5 列
     df_raw = pd.read_excel(file, header=None)
-    header_row, header_col = None, None
-    for i in range(min(5, len(df_raw))):  # 假設標題不會超過前 5 列
+    header_row = header_col = None
+    for i in range(min(5, len(df_raw))):
         for j, cell in enumerate(df_raw.iloc[i].tolist()):
-            if str(cell).strip() in col_candidates:
+            text = str(cell)
+            if any(keyword in text for keyword in ["授權", "授权", "Auth"]):
                 header_row, header_col = i, j
                 break
         if header_row is not None:
             break
     if header_row is None:
-        st.error("未找到授權碼欄位，請確認檔案中包含「授權碼」或「授权码」欄位。")
+        st.error("未找到授權碼欄位，請確認檔案中包含對應標題。")
         return []
-    # 取得 header_row 下一列開始所有非空值
+    # 從 header_row + 1 開始抓取該欄所有值
     codes = df_raw.iloc[header_row+1:, header_col].dropna().astype(str).str.strip().tolist()
     return codes
 
