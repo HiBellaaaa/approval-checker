@@ -50,7 +50,8 @@ mac = st.text_input("2. 請輸入 MAC 值")
 # 3. 輸入搜尋日期 (YYYYMMDD)
 date_str = st.text_input("3. 請輸入搜尋日期 (格式: YYYYMMDD)")
 
-# 當三項皆有值時開始比對\if pay_file and mac and date_str:
+# 當三項皆有值時開始比對
+if pay_file and mac and date_str:
     if not pay_file.name.startswith("PayDetailRpt"):
         st.warning("對帳檔名需以 'PayDetailRpt' 開頭，請確認後再上傳。")
 
@@ -77,3 +78,4 @@ date_str = st.text_input("3. 請輸入搜尋日期 (格式: YYYYMMDD)")
         st.subheader("比對結果：對帳檔中未出現在 log 檔的授權碼")
         st.write(f"共 {len(unmatched)} 筆未配對授權碼")
         st.dataframe(pd.DataFrame(unmatched, columns=["未配對的授權碼"]))
+
