@@ -8,14 +8,25 @@ from datetime import datetime, time as dtime
 @st.cache_data
 def extract_approval_ids_from_text(content: str, cutoff: dtime, target_date: str):
     ids = []
+    # 將目標日期格式化為 'YYYY-MM-DD'
+    date_prefix = datetime.strptime(target_date, "%Y%m%d").strftime("%Y-%m-%d")
     for line in content.splitlines():
-        m = re.match(r"(\d{4}-\d{2}-\d{2})_(\d{2}):(\d{2}):(\d{2}).*Approval ID[:：]\s*([A-Z0-9]+)", line)
-        if m:
-            date_part, hh, mm, ss, code = m.groups()
-            if date_part == datetime.strptime(target_date, "%Y%m%d").strftime("%Y-%m-%d"):
-                t = dtime(int(hh), int(mm), int(ss))
-                if t <= cutoff:
-                    ids.append(code)
+        # 只處理當日的記錄
+        if date_prefix not in line:
+            continue
+        # 解析時間
+        tm = re.search(r'_(\d{2}):(\d{2}):(\d{2})', line)
+        if not tm:
+            continue
+        hh, mm, ss = tm.groups()
+        t = dtime(int(hh), int(mm), int(ss))
+        # 忽略超過結帳時間的紀錄
+        if t > cutoff:
+            continue
+        # 提取 Approval ID
+        matches = re.findall(r'Approval ID[:：]\s*([A-Z0-9]+)', line)
+        for code in matches:
+            ids.append(code)
     return ids
 
 # 擷取對帳檔中的授權碼，並過濾交易日
