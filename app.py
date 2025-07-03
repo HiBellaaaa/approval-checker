@@ -38,7 +38,7 @@ def extract_auth_codes_from_paydetail(file):
 
 st.title("授權碼比對工具")
 # 小標題：針對卡機連線異常狀況
-st.markdown("### 針對卡機連線異常狀況")
+st.markdown('<span style="font-size:12pt; font-weight:bold;">針對卡機連線異常狀況</span>', unsafe_allow_html=True)
 
 # 1. 上傳台新對帳檔 (Excel)
 pay_file = st.file_uploader(
