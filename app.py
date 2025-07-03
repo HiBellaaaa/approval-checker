@@ -52,7 +52,8 @@ pay_file = st.file_uploader(
     "1. 上傳台新對帳檔 (檔名前綴：PayDetailRpt，檔案規格： .xls/.xlsx)",
     type=["xls", "xlsx"]
 )
-# 2. 輸入機台 MAC 值\mac = st.text_input("2. 輸入機台 MAC 值（可在販賣機後台機台資訊頁找到）")
+# 2. 輸入機台 MAC 值（可在販賣機後台機台資訊頁找到）
+mac = st.text_input("2. 輸入機台 MAC 值（可在販賣機後台機台資訊頁找到）")
 # 3. 選擇搜尋日期
 date_input = st.date_input("3. 選擇搜尋日期")
 # 4. 選擇每日最後結帳時間
