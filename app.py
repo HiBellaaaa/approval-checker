@@ -85,7 +85,7 @@ mac = st.text_input("2. 輸入機台 MAC 值（可在販賣機後台機台資訊
 # 3. 選擇搜尋日期
 date_input = st.date_input("3. 選擇搜尋日期")
 # 4. 選擇每日最後結帳時間
-time_input = st.time_input("4. 選擇每日最後結帳時間", value=dtime(19, 0))
+time_input = st.time_input("4. 選擇每日最後結帳時間", value=dtime(21, 0))
 
 # 5. 送出按鈕
 if st.button("送出"):
