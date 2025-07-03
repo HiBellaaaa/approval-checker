@@ -60,7 +60,12 @@ if pay_file and mac and date_str:
         try:
             res = requests.get(url, timeout=10)
             res.raise_for_status()
-            log_content = res.text
+            # 強制使用適當編碼，避免亂碼
+            # 先嘗試 UTF-8，若失敗再用 Big5
+            try:
+                log_content = res.content.decode('utf-8')
+            except UnicodeDecodeError:
+                log_content = res.content.decode('big5', errors='ignore')
         except Exception as e:
             st.error(f"無法取得 log 檔: {e}")
             st.stop()
