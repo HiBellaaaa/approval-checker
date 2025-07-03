@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 import requests
+from datetime import datetime
 
 # 擷取 log 內容中的 Approval ID
 @st.cache_data
@@ -44,8 +45,10 @@ pay_file = st.file_uploader(
 )
 # 2. 輸入機台 MAC 值（可在販賣機後台機台資訊頁找到）
 mac = st.text_input("2. 輸入機台 MAC 值（可在販賣機後台機台資訊頁找到）")
-# 3. 輸入搜尋日期 (YYYYMMDD)
-date_str = st.text_input("3. 輸入搜尋日期 (格式 YYYYMMDD)")
+# 3. 選擇搜尋日期
+date_input = st.date_input("3. 選擇搜尋日期")
+# 將日期轉為 YYYYMMDD 字串
+date_str = date_input.strftime("%Y%m%d") if date_input else ""
 
 if pay_file and mac and date_str:
     if not pay_file.name.startswith("PayDetailRpt"):
