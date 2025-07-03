@@ -36,11 +36,12 @@ def extract_auth_codes_from_paydetail(file):
         return []
     return df_raw.iloc[header_row+1:, header_col].dropna().astype(str).str.strip().tolist()
 
-st.title("Approval ID 比對工具 (含除錯資訊)")
+st.title("Approval ID 比對工具 (附 Log 檔除錯) ")
 
 # 1. 上傳對帳檔 (Excel)
 pay_file = st.file_uploader(
-    "1. 上傳對帳檔 (檔名前綴：PayDetailRpt，Excel .xls/.xlsx)", type=["xls", "xlsx"]
+    "1. 上傳對帳檔 (檔名前綴：PayDetailRpt，Excel .xls/.xlsx)",
+    type=["xls", "xlsx"]
 )
 # 2. 輸入 MAC 值
 mac = st.text_input("2. 輸入 MAC 值")
@@ -51,8 +52,10 @@ if pay_file and mac and date_str:
     if not pay_file.name.startswith("PayDetailRpt"):
         st.warning("檔名須以 'PayDetailRpt' 開頭。")
 
-    with st.spinner("處理中..."):
+    with st.spinner("撈取 log 檔並處理中..."):
+        # 取得授權碼列表
         auth_codes = extract_auth_codes_from_paydetail(pay_file)
+        # 下載 log 檔內容
         url = f"http://54.213.216.234/sync/{mac}/sqlite/EDC_log/{date_str}_ui.txt"
         try:
             res = requests.get(url, timeout=10)
@@ -61,25 +64,30 @@ if pay_file and mac and date_str:
         except Exception as e:
             st.error(f"無法取得 log 檔: {e}")
             st.stop()
-        approval_ids = extract_approval_ids_from_text(log_content)
 
-        # 計算
+        # 顯示並提供下載 log 檔
+        st.subheader("Log 檔原始內容預覽")
+        st.text_area("Log content", log_content, height=300)
+        st.download_button(
+            label="下載 Log 檔",
+            data=log_content,
+            file_name=f"{date_str}_ui.txt",
+            mime="text/plain"
+        )
+
+        # 取得 Approval IDs 並比對
+        approval_ids = extract_approval_ids_from_text(log_content)
         set_auth = set(auth_codes)
         set_approval = set(approval_ids)
-        intersection = set_auth & set_approval
         unmatched_auth = sorted(set_auth - set_approval)
-        unmatched_approval = sorted(set_approval - set_auth)
 
-        # 顯示除錯資訊
-        st.subheader("除錯資訊")
-        st.write(f"對帳檔授權碼總筆數: {len(auth_codes)} (去重後 {len(set_auth)})")
-        st.write(f"Log 中 Approval IDs 總筆數: {len(approval_ids)} (去重後 {len(set_approval)})")
-        st.write(f"兩者交集 (重疊) 數量: {len(intersection)}")
-        st.write(f"對帳檔中未出現在 Log 的授權碼: {len(unmatched_auth)} 筆")
-        st.write(f"Log 中未出現在對帳檔的 Approval IDs: {len(unmatched_approval)} 筆")
-
+        # 顯示結果
         st.subheader("比對結果：對帳檔中未出現在 log 檔的授權碼")
+        st.write(f"共 {len(unmatched_auth)} 筆未配對授權碼")
         st.dataframe(pd.DataFrame(unmatched_auth, columns=["未配對的授權碼"]))
 
-        st.subheader("比對結果：log 中未出現在對帳檔的 Approval IDs")
-        st.dataframe(pd.DataFrame(unmatched_approval, columns=["未配對的 Approval ID"]))
+        # 顯示除錯統計資訊
+        st.subheader("比對統計資訊")
+        st.write(f"對帳 Excel 授權碼數量（總/去重）：{len(auth_codes)}/{len(set_auth)}")
+        st.write(f"Log Approval ID 數量（總/去重）：{len(approval_ids)}/{len(set_approval)}")
+        st.write(f"交集數量：{len(set_auth & set_approval)}")
