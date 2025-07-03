@@ -94,6 +94,13 @@ if st.button("送出"):
                 st.stop()
             # 取得 Log Approval IDs
             approval_ids = extract_approval_ids_from_text(content, time_input, date_str)
+            # Debug: 若未擷取到任何 Approval ID，顯示前幾行與包含 ID 的行
+            if not approval_ids:
+                st.error("Log 檔 Approval ID 筆數為 0，可能日期或時間範圍不正確。")
+                lines = content.splitlines()
+                st.write("Log 檔前 10 行:", lines[:10])
+                approval_lines = [l for l in lines if "Approval ID" in l]
+                st.write("包含 'Approval ID' 的行:", approval_lines)
             # 顯示筆數
             cnt_pay = len(auth_codes)
             cnt_log = len(approval_ids)
