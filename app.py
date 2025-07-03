@@ -50,14 +50,15 @@ mac = st.text_input("2. 請輸入 MAC 值")
 # 3. 輸入搜尋日期 (YYYYMMDD)
 date_str = st.text_input("3. 請輸入搜尋日期 (格式: YYYYMMDD)")
 
-# 當三項皆有值時開始比對
+# 三者皆有值時啟動比對
 if pay_file and mac and date_str:
     if not pay_file.name.startswith("PayDetailRpt"):
         st.warning("對帳檔名需以 'PayDetailRpt' 開頭，請確認後再上傳。")
 
     with st.spinner("撈取 log 檔並處理中..."):
-        # 取得對帳授權碼與 log Approval IDs
+        # 取得授權碼列表
         auth_codes = extract_auth_codes_from_paydetail(pay_file)
+        # 從遠端下載 log 檔
         url = f"http://54.213.216.234/sync/{mac}/sqlite/EDC_log/{date_str}_ui.txt"
         try:
             res = requests.get(url, timeout=10)
@@ -66,14 +67,12 @@ if pay_file and mac and date_str:
         except Exception as e:
             st.error(f"無法取得 log 檔: {e}")
             st.stop()
+        # 取得 Approval IDs
         approval_ids = extract_approval_ids_from_text(log_content)
 
-        # 找出「未重疊」的值
-        set_auth = set(auth_codes)
-        set_approval = set(approval_ids)
-        non_overlapping = sorted(set_auth.symmetric_difference(set_approval))
+        # 找出對帳檔授權碼中未出現在 log 檔的項目
+        unmatched = sorted(set(auth_codes) - set(approval_ids))
 
-        st.subheader("比對結果：對帳檔＆log 檔中未重疊的值")
-        st.write(f"共 {len(non_overlapping)} 筆未重疊")
-        st.dataframe(pd.DataFrame(non_overlapping, columns=["未重疊的值"]))
-
+        st.subheader("比對結果：對帳檔中未出現在 log 檔的授權碼")
+        st.write(f"共 {len(unmatched)} 筆未配對授權碼")
+        st.dataframe(pd.DataFrame(unmatched, columns=["未配對的授權碼"]))
