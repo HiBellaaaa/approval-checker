@@ -18,8 +18,7 @@ def extract_auth_codes_from_paydetail(file):
         return []
     # 部分字串匹配欄位名
     for col in df.columns:
-        name = str(col)
-        if any(keyword in name for keyword in ["授權", "授权", "Auth"]):
+        if any(keyword in str(col) for keyword in ["授權", "授权", "Auth"]):
             return df[col].dropna().astype(str).str.strip().tolist()
     # 若標準 header 不行，掃描前 5 列
     df_raw = pd.read_excel(file, header=None)
@@ -36,7 +35,7 @@ def extract_auth_codes_from_paydetail(file):
         return []
     return df_raw.iloc[header_row+1:, header_col].dropna().astype(str).str.strip().tolist()
 
-st.title("Approval ID 比對工具 (附 Log 檔除錯) ")
+st.title("Approval ID 比對工具")
 
 # 1. 上傳對帳檔 (Excel)
 pay_file = st.file_uploader(
@@ -50,49 +49,29 @@ date_str = st.text_input("3. 輸入搜尋日期 (格式 YYYYMMDD)")
 
 if pay_file and mac and date_str:
     if not pay_file.name.startswith("PayDetailRpt"):
-        st.warning("檔名須以 'PayDetailRpt' 開頭。")
-
-    with st.spinner("撈取 log 檔並處理中..."):
-        # 取得授權碼列表
-        auth_codes = extract_auth_codes_from_paydetail(pay_file)
-        # 下載 log 檔內容
-        url = f"http://54.213.216.234/sync/{mac}/sqlite/EDC_log/{date_str}_ui.txt"
-        try:
-            res = requests.get(url, timeout=10)
-            res.raise_for_status()
-            # 強制使用適當編碼，避免亂碼
-            # 先嘗試 UTF-8，若失敗再用 Big5
+        st.warning("對帳檔名須以 'PayDetailRpt' 開頭。")
+    else:
+        with st.spinner("處理中..."):
+            # 取得授權碼列表
+            auth_codes = extract_auth_codes_from_paydetail(pay_file)
+            # 下載 log 檔內容
+            url = f"http://54.213.216.234/sync/{mac}/sqlite/EDC_log/{date_str}_ui.txt"
             try:
-                log_content = res.content.decode('utf-8')
-            except UnicodeDecodeError:
-                log_content = res.content.decode('big5', errors='ignore')
-        except Exception as e:
-            st.error(f"無法取得 log 檔: {e}")
-            st.stop()
+                res = requests.get(url, timeout=10)
+                res.raise_for_status()
+                try:
+                    log_content = res.content.decode('utf-8')
+                except UnicodeDecodeError:
+                    log_content = res.content.decode('big5', errors='ignore')
+            except Exception as e:
+                st.error(f"無法取得 log 檔: {e}")
+                st.stop()
 
-        # 顯示並提供下載 log 檔
-        st.subheader("Log 檔原始內容預覽")
-        st.text_area("Log content", log_content, height=300)
-        st.download_button(
-            label="下載 Log 檔",
-            data=log_content,
-            file_name=f"{date_str}_ui.txt",
-            mime="text/plain"
-        )
+            # 擷取 Approval IDs 並比對
+            approval_ids = extract_approval_ids_from_text(log_content)
+            unmatched_auth = sorted(set(auth_codes) - set(approval_ids))
 
-        # 取得 Approval IDs 並比對
-        approval_ids = extract_approval_ids_from_text(log_content)
-        set_auth = set(auth_codes)
-        set_approval = set(approval_ids)
-        unmatched_auth = sorted(set_auth - set_approval)
-
-        # 顯示結果
-        st.subheader("比對結果：對帳檔中未出現在 log 檔的授權碼")
-        st.write(f"共 {len(unmatched_auth)} 筆未配對授權碼")
-        st.dataframe(pd.DataFrame(unmatched_auth, columns=["未配對的授權碼"]))
-
-        # 顯示除錯統計資訊
-        st.subheader("比對統計資訊")
-        st.write(f"對帳 Excel 授權碼數量（總/去重）：{len(auth_codes)}/{len(set_auth)}")
-        st.write(f"Log Approval ID 數量（總/去重）：{len(approval_ids)}/{len(set_approval)}")
-        st.write(f"交集數量：{len(set_auth & set_approval)}")
+            # 顯示結果
+            st.subheader("比對結果：對帳檔中未出現在 log 檔的授權碼")
+            st.write(f"共 {len(unmatched_auth)} 筆未配對授權碼")
+            st.dataframe(pd.DataFrame(unmatched_auth, columns=["未配對的授權碼"]))
