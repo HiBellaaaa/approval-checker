@@ -4,15 +4,14 @@ import re
 
 # 擷取 log 檔中的 Approval ID
 @st.cache_data
- def extract_approval_ids_from_log(file):
+def extract_approval_ids_from_log(file):
     content = file.read().decode('utf-8')
     return re.findall(r'Approval ID[:：]\s*([A-Z0-9]+)', content)
 
 # 擷取對帳檔中的授權碼
 @st.cache_data
- def extract_auth_codes_from_paydetail(file):
+def extract_auth_codes_from_paydetail(file):
     try:
-        # 讀取 Excel 檔
         df = pd.read_excel(file)
     except Exception:
         st.error("無法讀取 Excel 檔，請確認檔案格式為 .xls 或 .xlsx。")
