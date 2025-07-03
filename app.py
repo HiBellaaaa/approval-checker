@@ -47,31 +47,34 @@ pay_file = st.file_uploader(
 mac = st.text_input("2. 輸入機台 MAC 值（可在販賣機後台機台資訊頁找到）")
 # 3. 選擇搜尋日期
 date_input = st.date_input("3. 選擇搜尋日期")
-# 將日期轉為 YYYYMMDD 字串
+# 轉為字串
 date_str = date_input.strftime("%Y%m%d") if date_input else ""
 
-if pay_file and mac and date_str:
-    if not pay_file.name.startswith("PayDetailRpt"):
+# 4. 送出按鈕
+if st.button("送出"):
+    if not pay_file or not mac or not date_str:
+        st.warning("請確認已上傳對帳檔、輸入 MAC 值及選擇日期後再送出。")
+    elif not pay_file.name.startswith("PayDetailRpt"):
         st.warning("對帳檔名須以 'PayDetailRpt' 開頭。")
     else:
         with st.spinner("處理中..."):
             # 取得授權碼列表
             auth_codes = extract_auth_codes_from_paydetail(pay_file)
-            # 下載 log 檔內容
+            # 組 URL 下載 log
             url = f"http://54.213.216.234/sync/{mac}/sqlite/EDC_log/{date_str}_ui.txt"
             try:
                 res = requests.get(url, timeout=10)
                 res.raise_for_status()
                 try:
-                    log_content = res.content.decode('utf-8')
+                    content = res.content.decode('utf-8')
                 except UnicodeDecodeError:
-                    log_content = res.content.decode('big5', errors='ignore')
+                    content = res.content.decode('big5', errors='ignore')
             except Exception as e:
                 st.error(f"無法取得 log 檔: {e}")
                 st.stop()
 
             # 擷取 Approval IDs 並比對
-            approval_ids = extract_approval_ids_from_text(log_content)
+            approval_ids = extract_approval_ids_from_text(content)
             unmatched_auth = sorted(set(auth_codes) - set(approval_ids))
 
             # 顯示結果
