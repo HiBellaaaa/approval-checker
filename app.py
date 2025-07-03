@@ -74,7 +74,7 @@ def extract_auth_codes_from_paydetail(file, target_date: str):
     return df[auth_col].dropna().astype(str).str.strip().tolist()
 
 st.title("授權碼比對工具")
-st.markdown('<span style="font-size:12pt; font-weight:bold;">針對卡機連線異常狀況</span>', unsafe_allow_html=True)
+st.markdown('<span style="font-size:12pt; font-weight:bold;">針對卡機連線異常狀況（如為該日結帳後的異常交易，不適用此工具）</span>', unsafe_allow_html=True)
 
 # 1. 上傳台新對帳檔 (Excel)
 pay_file = st.file_uploader(
