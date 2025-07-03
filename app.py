@@ -35,15 +35,15 @@ def extract_auth_codes_from_paydetail(file):
         return []
     return df_raw.iloc[header_row+1:, header_col].dropna().astype(str).str.strip().tolist()
 
-st.title("Approval ID 比對工具")
+st.title("授權碼比對工具")
 
-# 1. 上傳對帳檔 (Excel)
+# 1. 上傳台新對帳檔 (Excel)
 pay_file = st.file_uploader(
-    "1. 上傳對帳檔 (檔名前綴：PayDetailRpt，Excel .xls/.xlsx)",
+    "1. 上傳台新對帳檔 (檔名前綴：PayDetailRpt，檔案規格： .xls/.xlsx)",
     type=["xls", "xlsx"]
 )
-# 2. 輸入 MAC 值
-mac = st.text_input("2. 輸入 MAC 值")
+# 2. 輸入機台 MAC 值（可在販賣機後台機台資訊頁找到）
+mac = st.text_input("2. 輸入機台 MAC 值（可在販賣機後台機台資訊頁找到）")
 # 3. 輸入搜尋日期 (YYYYMMDD)
 date_str = st.text_input("3. 輸入搜尋日期 (格式 YYYYMMDD)")
 
@@ -73,5 +73,5 @@ if pay_file and mac and date_str:
 
             # 顯示結果
             st.subheader("比對結果：對帳檔中未出現在 log 檔的授權碼")
-            st.write(f"共 {len(unmatched_auth)} 筆未配對授權碼")
+            st.write(f"共 {len(unmatched_auth)} 筆未配對的授權碼")
             st.dataframe(pd.DataFrame(unmatched_auth, columns=["未配對的授權碼"]))
