@@ -40,7 +40,7 @@ def extract_approval_ids_from_text(content: str, cutoff: dtime, target_date: str
 @st.cache_data
 def extract_auth_codes_from_paydetail(file, target_date: str):
     try:
-        df = pd.read_excel(file, header=0)
+        df = pd.read_excel(file, header=5)  # 從第6列(Row index 5)開始讀取標題
     except Exception:
         st.error("無法讀取 Excel 檔，請確認格式為 .xls 或 .xlsx。")
         return []
