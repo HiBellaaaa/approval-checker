@@ -86,21 +86,30 @@ if st.button("送出"):
     else:
         with st.spinner("處理中..."):
             date_str = date_input.strftime("%Y%m%d")
+            # 對帳檔授權碼
             auth_codes = extract_auth_codes_from_paydetail(pay_file, date_str)
+            # 下載 Log 檔並提供匯出
             url = f"http://54.213.216.234/sync/{mac}/sqlite/EDC_log/{date_str}_ui.txt"
             try:
                 res = requests.get(url, timeout=10)
                 res.raise_for_status()
                 content = res.content.decode('utf-8', errors='ignore')
+                # 下載按鈕
+                st.download_button(
+                    label="下載 Log 原始檔",
+                    data=content,
+                    file_name=f"{date_str}_ui.txt",
+                    mime="text/plain"
+                )
             except Exception as e:
                 st.error(f"無法取得 log 檔: {e}")
                 st.stop()
+            # 擷取 Approval IDs
             approval_ids = extract_approval_ids_from_text(content, time_input, date_str)
             counter_auth = Counter(auth_codes)
             counter_log = Counter(approval_ids)
             diff_counter = counter_auth - counter_log
             unmatched = list(diff_counter.elements())
-            # 補零至六位數
             unmatched = [code.zfill(6) for code in unmatched]
 
             cnt_pay = sum(counter_auth.values())
