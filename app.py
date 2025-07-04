@@ -86,7 +86,7 @@ if st.button("送出"):
     else:
         with st.spinner("處理中..."):
             date_str = date_input.strftime("%Y%m%d")
-            # 對帳檔授權碼
+                        # 對帳檔授權碼
             auth_codes = extract_auth_codes_from_paydetail(pay_file, date_str)
             # 下載 Log 檔並提供匯出
             url = f"http://54.213.216.234/sync/{mac}/sqlite/EDC_log/{date_str}_ui.txt"
@@ -106,13 +106,17 @@ if st.button("送出"):
                 st.stop()
             # 擷取 Approval IDs
             approval_ids = extract_approval_ids_from_text(content, time_input, date_str)
-            counter_auth = Counter(auth_codes)
-            counter_log = Counter(approval_ids)
+            # 統一 Normalize 為六位數字串，方便比對
+            auth_codes_norm = [str(int(c)).zfill(6) for c in auth_codes]
+            approval_ids_norm = [str(int(c)).zfill(6) for c in approval_ids]
+            counter_auth = Counter(auth_codes_norm)
+            counter_log = Counter(approval_ids_norm)
+            # 差集運算
             diff_counter = counter_auth - counter_log
             unmatched = list(diff_counter.elements())
-            unmatched = [code.zfill(6) for code in unmatched]
 
             cnt_pay = sum(counter_auth.values())
+            cnt_log = sum(counter_log.values())
             cnt_log = sum(counter_log.values())
             st.write(f"對帳檔授權碼筆數：{cnt_pay}")
             st.write(f"Log 檔 Approval ID 筆數：{cnt_log}")
