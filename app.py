@@ -107,8 +107,8 @@ if st.button("送出"):
             # 擷取 Approval IDs
             approval_ids = extract_approval_ids_from_text(content, time_input, date_str)
             # 統一 Normalize 為六位數字串，方便比對
-            auth_codes_norm = [str(int(c)).zfill(6) for c in auth_codes]
-            approval_ids_norm = [str(int(c)).zfill(6) for c in approval_ids]
+            auth_codes_norm = [c.zfill(6) for c in auth_codes]  # 保留原始字串並補零至六位
+            approval_ids_norm = [c.zfill(6) for c in approval_ids]  # 保留原始字串並補零至六位
             counter_auth = Counter(auth_codes_norm)
             counter_log = Counter(approval_ids_norm)
             # 差集運算
